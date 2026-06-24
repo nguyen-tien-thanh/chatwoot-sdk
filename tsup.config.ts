@@ -3,10 +3,11 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
-  dts: true,
+  dts: false,
   sourcemap: true,
   clean: true,
   splitting: false,
-  treeshake: true,
+  treeshake: false,
   tsconfig: 'tsconfig.build.json',
+  external: ['axios', 'form-data', '@nestjs/common'],
 });

@@ -1,14 +1,19 @@
-export const SDK_VERSION = '1.0.0';
+export { ChatwootClient } from './chatwoot-client';
+export { ChatwootModule } from './chatwoot.module';
+export {
+  CHATWOOT_CLIENT,
+  CHATWOOT_OPTIONS,
+} from './chatwoot.config';
+export type {
+  ChatwootClientConfig,
+  ChatwootClientsConfig,
+} from './chatwoot.config';
+export type {
+  contact_create,
+  ContactCreateData,
+  ContactUpdateData,
+  ConversationCreateData,
+  MessageCreateData,
+} from './chatwoot.types';
 
-export type ChatwootSdkConfig = {
-  baseUrl: string;
-  apiAccessToken: string;
-};
-
-export class ChatwootClient {
-  constructor(private readonly config: ChatwootSdkConfig) {}
-
-  get baseUrl(): string {
-    return this.config.baseUrl;
-  }
-}
+export * from './generated';

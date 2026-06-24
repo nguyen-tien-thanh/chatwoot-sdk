@@ -1,0 +1,20 @@
+import type { inbox } from './inbox';
+import type { portal_config } from './portal_config';
+import type { portal_logo } from './portal_logo';
+import type { portal_meta } from './portal_meta';
+export type portal_item = {
+  id?: number;
+  archived?: boolean;
+  color?: string;
+  config?: portal_config;
+  custom_domain?: string;
+  header_text?: string;
+  homepage_link?: string;
+  name?: string;
+  slug?: string;
+  page_title?: string;
+  account_id?: number;
+  inbox?: inbox;
+  logo?: portal_logo;
+  meta?: portal_meta;
+};
