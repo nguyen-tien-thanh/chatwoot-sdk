@@ -1,0 +1,17 @@
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
+/.nx/cache
+/.nx/workspace-data
+
+# virtual environments
+**/.venv
+**/.venv/**
+
+# yarn artifacts
+.yarn
+.yarn/**
+
+# logs
+**/*.log
+logs/**
