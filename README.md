@@ -35,10 +35,10 @@ const client = new ChatwootClient({
 
 ### Configuration
 
-| Property          | Required | Description                              |
-| ----------------- | -------- | ---------------------------------------- |
-| `baseUrl`         | Yes      | Chatwoot instance URL                    |
-| `token`           | Yes      | API access token                         |
+| Property          | Required | Description                                  |
+| ----------------- | -------- | -------------------------------------------- |
+| `baseUrl`         | Yes      | Chatwoot instance URL                        |
+| `token`           | Yes      | API access token                             |
 | `withCredentials` | No       | Send cookies with requests (default: `true`) |
 
 ## Examples
@@ -122,7 +122,10 @@ await client.webhooks.listAllWebhooks({ accountId: 1 });
 
 // Or via client.api
 await client.api.teams.teamList({ accountId: 1 });
-await client.api.reports.getAccountReports({ accountId: 1, metric: 'conversations_count' });
+await client.api.reports.getAccountReports({
+  accountId: 1,
+  metric: 'conversations_count',
+});
 ```
 
 Available services include `account`, `accounts`, `agents`, `agentBots`, `inboxes`, `labels`, `teams`, `users`, `webhooks`, `reports`, `helpCenter`, `integrations`, `customAttributes`, `customFilters`, `automationRule`, `cannedResponses`, `auditLogs`, and more.
@@ -145,7 +148,11 @@ await api.contacts.contactList({ accountId: 1 });
 All types and models (e.g. `contact`, `conversation`, `inbox`, `ApiError`) are exported from the main package:
 
 ```ts
-import type { contact, conversation, inbox } from '@nguyen-tien-thanh/chatwoot-sdk';
+import type {
+  contact,
+  conversation,
+  inbox,
+} from '@nguyen-tien-thanh/chatwoot-sdk';
 ```
 
 ## Error handling
@@ -157,9 +164,9 @@ try {
   await client.contacts.list({ accountId: 1 });
 } catch (error) {
   if (error instanceof ApiError) {
-    console.error(error.status);     // HTTP status code
+    console.error(error.status); // HTTP status code
     console.error(error.statusText); // HTTP status text
-    console.error(error.body);       // Response body from Chatwoot
+    console.error(error.body); // Response body from Chatwoot
   }
   throw error;
 }
