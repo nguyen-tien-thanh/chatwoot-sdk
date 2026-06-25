@@ -1,6 +1,7 @@
 import { ChatwootAPI } from './generated';
 import type { OpenAPIConfig } from './generated';
 import type { ChatwootClientConfig } from './chatwoot.config';
+import { SmartAxiosHttpRequest } from './smart-http-request';
 import type {
   ContactCreateData,
   ContactUpdateData,
@@ -9,6 +10,7 @@ import type {
 } from './chatwoot.types';
 
 export type {
+  ChatwootFileUpload,
   contact_create,
   ContactCreateData,
   ContactUpdateData,
@@ -34,7 +36,9 @@ export class ChatwootClient {
     create: (params: { accountId: number; data: ContactCreateData }) =>
       this.api.contacts.contactCreate({
         accountId: params.accountId,
-        requestBody: params.data,
+        requestBody: params.data as Parameters<
+          ChatwootAPI['contacts']['contactCreate']
+        >[0]['requestBody'],
       }),
 
     update: (params: {
@@ -45,7 +49,9 @@ export class ChatwootClient {
       this.api.contacts.contactUpdate({
         accountId: params.accountId,
         id: params.id,
-        requestBody: params.data,
+        requestBody: params.data as Parameters<
+          ChatwootAPI['contacts']['contactUpdate']
+        >[0]['requestBody'],
       }),
   };
 
@@ -82,7 +88,7 @@ export class ChatwootClient {
       CREDENTIALS: 'include',
     };
 
-    this.api = new ChatwootAPI(openApiConfig);
+    this.api = new ChatwootAPI(openApiConfig, SmartAxiosHttpRequest);
   }
 
   get account() {

@@ -1,18 +1,20 @@
 import type { contact_create_payload } from './generated/models/contact_create_payload';
 import type { contact_update_payload } from './generated/models/contact_update_payload';
+import type { ChatwootFileUpload } from './multipart';
 
 export type { contact_create_payload as contact_create } from './generated/models/contact_create_payload';
+export type { ChatwootFileUpload } from './multipart';
 
 export type MessageCreateData = {
-  content: string;
+  content?: string;
   message_type?: 'outgoing' | 'incoming' | 'activity' | (string & {});
   private?: boolean;
   source_id?: string;
   source_reply_id?: string;
   content_type?: string;
   content_attributes?: Record<string, unknown>;
-  attachments?: Array<Record<string, unknown>>;
-  [key: string]: unknown;
+  /** When set, the request is sent as multipart/form-data instead of JSON. */
+  attachments?: ChatwootFileUpload[];
 };
 
 export type ConversationCreateData = {
@@ -28,5 +30,10 @@ export type ConversationCreateData = {
   [key: string]: unknown;
 };
 
-export type ContactCreateData = contact_create_payload;
-export type ContactUpdateData = contact_update_payload;
+export type ContactCreateData = Omit<contact_create_payload, 'avatar'> & {
+  avatar?: ChatwootFileUpload;
+};
+
+export type ContactUpdateData = Omit<contact_update_payload, 'avatar'> & {
+  avatar?: ChatwootFileUpload;
+};

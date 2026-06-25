@@ -7,6 +7,8 @@ import type {
 } from 'axios';
 import FormData from 'form-data';
 
+import { isFormDataFileValue } from '../../multipart';
+
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
@@ -39,6 +41,10 @@ export const isBlob = (value: any): value is Blob => {
     /^(Blob|File)$/.test(value.constructor.name) &&
     /^(Blob|File)$/.test(value[Symbol.toStringTag])
   );
+};
+
+export const isBuffer = (value: any): value is Buffer => {
+  return typeof Buffer !== 'undefined' && Buffer.isBuffer(value);
 };
 
 export const isFormData = (value: any): value is FormData => {
@@ -117,7 +123,12 @@ export const getFormData = (
     const formData = new FormData();
 
     const process = (key: string, value: any) => {
-      if (isString(value) || isBlob(value)) {
+      if (isFormDataFileValue(value)) {
+        formData.append(key, value.value, {
+          filename: value.filename,
+          contentType: value.contentType,
+        });
+      } else if (isString(value) || isBlob(value) || isBuffer(value)) {
         formData.append(key, value);
       } else {
         formData.append(key, JSON.stringify(value));
@@ -318,7 +329,12 @@ export const request = <T>(
       const url = getUrl(config, options);
       const formData = getFormData(options);
       const body = getRequestBody(options);
-      const headers = await getHeaders(config, options, formData);
+      const multipartBody = isFormData(body) ? body : undefined;
+      const headers = await getHeaders(
+        config,
+        options,
+        formData ?? multipartBody,
+      );
 
       if (!onCancel.isCancelled) {
         const response = await sendRequest<T>(

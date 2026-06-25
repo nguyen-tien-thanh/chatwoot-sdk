@@ -6,6 +6,7 @@ export type {
   ChatwootClientsConfig,
 } from './chatwoot.config';
 export type {
+  ChatwootFileUpload,
   contact_create,
   ContactCreateData,
   ContactUpdateData,
