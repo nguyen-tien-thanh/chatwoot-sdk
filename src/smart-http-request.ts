@@ -1,13 +1,13 @@
 import type { ApiRequestOptions } from './generated/core/ApiRequestOptions';
 import { BaseHttpRequest } from './generated/core/BaseHttpRequest';
-import type { CancelablePromise } from './generated/core/CancelablePromise';
+import { CancelablePromise } from './generated/core/CancelablePromise';
 import type { OpenAPIConfig } from './generated/core/OpenAPI';
 import { request as baseRequest } from './generated/core/request';
-import { bodyContainsFiles, bodyToFormFields } from './multipart';
+import { bodyContainsFiles, bodyToFormFieldsAsync } from './multipart';
 
-function withMultipartConversion(
+async function withMultipartConversion(
   options: ApiRequestOptions,
-): ApiRequestOptions {
+): Promise<ApiRequestOptions> {
   if (options.formData) {
     return options;
   }
@@ -24,7 +24,9 @@ function withMultipartConversion(
     ...options,
     body: undefined,
     mediaType: undefined,
-    formData: bodyToFormFields(options.body as Record<string, unknown>),
+    formData: await bodyToFormFieldsAsync(
+      options.body as Record<string, unknown>,
+    ),
   };
 }
 
@@ -33,9 +35,20 @@ export class SmartAxiosHttpRequest extends BaseHttpRequest {
     super(config);
   }
 
-  public override request<T>(
-    options: ApiRequestOptions,
-  ): CancelablePromise<T> {
-    return baseRequest(this.config, withMultipartConversion(options));
+  public override request<T>(options: ApiRequestOptions): CancelablePromise<T> {
+    return new CancelablePromise<T>((resolve, reject, onCancel) => {
+      let requestPromise: CancelablePromise<T> | undefined;
+
+      void withMultipartConversion(options)
+        .then((converted) => {
+          requestPromise = baseRequest<T>(this.config, converted);
+          requestPromise.then(resolve).catch(reject);
+        })
+        .catch(reject);
+
+      onCancel(() => {
+        requestPromise?.cancel();
+      });
+    });
   }
 }

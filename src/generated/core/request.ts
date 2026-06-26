@@ -1,10 +1,10 @@
-import axios from 'axios';
 import type {
   AxiosError,
+  AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
-  AxiosInstance,
 } from 'axios';
+import axios from 'axios';
 import FormData from 'form-data';
 
 import { isFormDataFileValue } from '../../multipart';
@@ -12,8 +12,8 @@ import { isFormDataFileValue } from '../../multipart';
 import { ApiError } from './ApiError';
 import type { ApiRequestOptions } from './ApiRequestOptions';
 import type { ApiResult } from './ApiResult';
-import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
+import { CancelablePromise } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
 
 export const isDefined = <T>(
@@ -128,8 +128,13 @@ export const getFormData = (
           filename: value.filename,
           contentType: value.contentType,
         });
-      } else if (isString(value) || isBlob(value) || isBuffer(value)) {
+      } else if (isString(value) || isBuffer(value)) {
         formData.append(key, value);
+      } else if (isBlob(value)) {
+        throw new Error(
+          'ChatwootFileUpload on Node.js must use Buffer or { data, filename, contentType }. ' +
+            'Browser File/Blob is not compatible with the Node form-data client.',
+        );
       } else {
         formData.append(key, JSON.stringify(value));
       }

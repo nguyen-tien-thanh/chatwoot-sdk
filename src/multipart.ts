@@ -1,8 +1,11 @@
-export type ChatwootFileUpload = Blob | File | {
-  data: ArrayBuffer | Uint8Array | Buffer;
-  filename: string;
-  contentType?: string;
-};
+export type ChatwootFileUpload =
+  | Blob
+  | File
+  | {
+      data: ArrayBuffer | Uint8Array | Buffer;
+      filename: string;
+      contentType?: string;
+    };
 
 export type FormDataFileValue = {
   readonly __chatwootFile: true;
@@ -43,7 +46,9 @@ export function isFileLike(value: unknown): value is ChatwootFileUpload {
   return isFileUploadDescriptor(value);
 }
 
-export function isFormDataFileValue(value: unknown): value is FormDataFileValue {
+export function isFormDataFileValue(
+  value: unknown,
+): value is FormDataFileValue {
   return (
     value !== null &&
     typeof value === 'object' &&
@@ -79,19 +84,49 @@ export function bodyContainsFiles(body: unknown): boolean {
 
 export function normalizeFileUpload(
   file: ChatwootFileUpload,
-): Blob | Buffer | FormDataFileValue {
+): Buffer | FormDataFileValue {
   if (isFileUploadDescriptor(file)) {
-    const value = toBuffer(file.data);
-
     return {
       __chatwootFile: true,
-      value,
+      value: toBuffer(file.data),
       filename: file.filename,
       contentType: file.contentType,
     };
   }
 
-  return file;
+  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(file)) {
+    return file;
+  }
+
+  throw new Error(
+    'ChatwootFileUpload on Node.js must use Buffer or { data, filename, contentType }. ' +
+      'Browser File/Blob is not compatible with the Node form-data client.',
+  );
+}
+
+export async function normalizeFileUploadAsync(
+  file: ChatwootFileUpload,
+): Promise<Buffer | FormDataFileValue> {
+  if (isFileUploadDescriptor(file) || Buffer.isBuffer(file)) {
+    return normalizeFileUpload(file);
+  }
+
+  if (typeof Blob !== 'undefined' && file instanceof Blob) {
+    const arrayBuffer = await file.arrayBuffer();
+    const filename =
+      typeof File !== 'undefined' && file instanceof File
+        ? file.name
+        : 'upload.bin';
+
+    return {
+      __chatwootFile: true,
+      value: Buffer.from(arrayBuffer),
+      filename,
+      contentType: file.type || undefined,
+    };
+  }
+
+  return normalizeFileUpload(file);
 }
 
 function toBuffer(data: ArrayBuffer | Uint8Array | Buffer): Buffer {
@@ -114,6 +149,23 @@ export function bodyToFormFields(
   body: Record<string, unknown>,
   prefix = '',
 ): Record<string, unknown> {
+  return buildFormFieldsSync(body, prefix, normalizeFileUpload);
+}
+
+export async function bodyToFormFieldsAsync(
+  body: Record<string, unknown>,
+  prefix = '',
+): Promise<Record<string, unknown>> {
+  return buildFormFields(body, prefix, normalizeFileUploadAsync);
+}
+
+async function buildFormFields(
+  body: Record<string, unknown>,
+  prefix: string,
+  normalize: (
+    file: ChatwootFileUpload,
+  ) => Buffer | FormDataFileValue | Promise<Buffer | FormDataFileValue>,
+): Promise<Record<string, unknown>> {
   const fields: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(body)) {
@@ -124,13 +176,13 @@ export function bodyToFormFields(
     const fieldKey = prefix ? `${prefix}[${key}]` : key;
 
     if (isFileLike(value)) {
-      fields[fieldKey] = normalizeFileUpload(value);
+      fields[fieldKey] = await normalize(value);
       continue;
     }
 
     if (key === 'attachments' && Array.isArray(value)) {
-      fields['attachments[]'] = value.map((file) =>
-        normalizeFileUpload(file as ChatwootFileUpload),
+      fields['attachments[]'] = await Promise.all(
+        value.map((file) => normalize(file as ChatwootFileUpload)),
       );
       continue;
     }
@@ -144,8 +196,54 @@ export function bodyToFormFields(
       if (!prefix && key === 'profile') {
         Object.assign(
           fields,
-          bodyToFormFields(value, 'profile'),
+          await buildFormFields(value, 'profile', normalize),
         );
+      } else {
+        fields[fieldKey] = JSON.stringify(value);
+      }
+      continue;
+    }
+
+    fields[fieldKey] = value;
+  }
+
+  return fields;
+}
+
+function buildFormFieldsSync(
+  body: Record<string, unknown>,
+  prefix: string,
+  normalize: (file: ChatwootFileUpload) => Buffer | FormDataFileValue,
+): Record<string, unknown> {
+  const fields: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(body)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    const fieldKey = prefix ? `${prefix}[${key}]` : key;
+
+    if (isFileLike(value)) {
+      fields[fieldKey] = normalize(value);
+      continue;
+    }
+
+    if (key === 'attachments' && Array.isArray(value)) {
+      fields['attachments[]'] = value.map((file) =>
+        normalize(file as ChatwootFileUpload),
+      );
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      fields[fieldKey] = JSON.stringify(value);
+      continue;
+    }
+
+    if (isPlainObject(value)) {
+      if (!prefix && key === 'profile') {
+        Object.assign(fields, buildFormFieldsSync(value, 'profile', normalize));
       } else {
         fields[fieldKey] = JSON.stringify(value);
       }
