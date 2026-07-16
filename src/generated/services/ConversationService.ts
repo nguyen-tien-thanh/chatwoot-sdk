@@ -12,7 +12,7 @@ export class ConversationService {
   }): CancelablePromise<conversation_messages> {
     return this.httpRequest.request({
       method: 'GET',
-      url: '/accounts/{account_id}/conversations/{conversation_id}/messages',
+      url: '/api/v1/accounts/{account_id}/conversations/{conversation_id}/messages',
       path: {
         account_id: accountId,
         conversation_id: conversationId,

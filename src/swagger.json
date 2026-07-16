@@ -8739,7 +8739,7 @@
         }
       }
     },
-    "/accounts/{account_id}/conversations/{conversation_id}/messages": {
+    "/api/v1/accounts/{account_id}/conversations/{conversation_id}/messages": {
       "parameters": [
         {
           "$ref": "#/components/parameters/account_id"
